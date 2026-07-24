@@ -3,13 +3,19 @@ import os
 from ultralytics import YOLO
 import numpy as np
 import config
+from pathlib import Path
 
 class FaceDetector:
     def __init__(self):
         """
         Initializes the face detector with the specified model path.
         """
-        model_path = "/mnt/c/users/osama/desktop/test_yolo/face-detection-yolov8/yolov8n-face.pt"
+        MODEL_NAME = "yolo26n.pt"
+        
+        YOLO(MODEL_NAME) # Downloads the pre trained model to your current directory if not already there
+        
+        model_path = Path(MODEL_NAME).resolve() # Get the exact absolute path on your disk
+        
         self.model = YOLO(model_path)
 
     def detector_analysis(self, image_path):
@@ -25,14 +31,15 @@ class FaceDetector:
             correct_exposure: Boolean that indicates whether the face has correct exposure.
         """
         results = self.model(image_path)  # Perform object detection
+        boxes = results[0].boxes.xyxy.cpu().numpy()  # Extract coordinates [x1, y1, x2, y2]
 
-        if len(results[0]) != 1:
-            return len(results[0]), False
+        if len(boxes) != 1:
+            return len(boxes), False
         
         image = cv2.imread(image_path)
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         
-        box = results[0][0]
+        box = boxes[0]
         top_left_x = int(box[0])
         top_left_y = int(box[1])
         bottom_right_x = int(box[2])
@@ -41,10 +48,11 @@ class FaceDetector:
         roi = gray[top_left_y:bottom_right_y, top_left_x:bottom_right_x]
         histogram = cv2.calcHist([roi], [0], None, [256], [0, 256])
         histo_sum = histogram.sum()
-        histogram = histogram / histo_sum
-        bad_exposure  = self.analyze_exposure(histogram)
+        if histo_sum > 0:
+            histogram = histogram / histo_sum
+        bad_exposure = self.analyze_exposure(histogram)
 
-        return len(results[0]), not bad_exposure
+        return len(boxes), not bad_exposure
     
     def detect_and_draw_faces(self, image_path, output_path=None):
         """
@@ -53,10 +61,10 @@ class FaceDetector:
         Args:
             image_path (str): Path to the image file.
             output_path (str, optional): Path to save the processed image. If provided,
-                                          the image will be saved in that directory with "_detect"
-                                          suffix appended to the filename. Otherwise, the image
-                                          will be saved in a folder called "faces_detected"
-                                          in the directory of the script (where your Python file is).
+                                         the image will be saved in that directory with "_detect"
+                                         suffix appended to the filename. Otherwise, the image
+                                         will be saved in a folder called "faces_detected"
+                                         in the directory of the script (where your Python file is).
 
         Returns:
             list: List of bounding boxes for detected faces in the format [x_min, y_min, x_max, y_max].
@@ -65,8 +73,10 @@ class FaceDetector:
         results = self.model(image_path)  # Perform object detection
         print('detected')
 
+        boxes = results[0].boxes.xyxy.cpu().numpy()  # Extract coordinates
+
         # Extract and convert bounding boxes for detected faces
-        for box in results[0]:
+        for box in boxes:
             top_left_x = int(box[0])
             top_left_y = int(box[1])
             bottom_right_x = int(box[2])
@@ -100,32 +110,27 @@ class FaceDetector:
 
         Args:
             image_path (str): Path to the image file.
-            output_path (str, optional): Path to save the processed image. If provided,
-                                          the image will be saved in that directory with "_detect"
-                                          suffix appended to the filename. Otherwise, the image
-                                          will be saved in a folder called "faces_detected"
-                                          in the directory of the script (where your Python file is).
 
         Returns:
-            list: List of bounding boxes for detected faces in the format [x_min, y_min, x_max, y_max].
+            tuple: Bounding box coordinates (top_left_x, top_left_y, bottom_right_x, bottom_right_y).
         """
         img = cv2.imread(image_path)
         results = self.model(image_path)  # Perform object detection
 
         image_height, image_width = img.shape[:2]
-        if len(results[0]) < 1:
+        boxes = results[0].boxes.xyxy.cpu().numpy()
+
+        if len(boxes) < 1:
             return 0, 0, image_width, image_height
 
         # Extract and convert bounding boxes for detected faces
-        box = results[0][0]
+        box = boxes[0]
         top_left_x = int(box[0])
         top_left_y = int(box[1])
         bottom_right_x = int(box[2])
         bottom_right_y = int(box[3])
 
         return top_left_x, top_left_y, bottom_right_x, bottom_right_y
-    
-
 
     def analyze_exposure(self, histogram):
         avg_light = np.mean(histogram[220:256])
