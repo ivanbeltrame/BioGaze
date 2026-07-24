@@ -127,13 +127,9 @@ To further enhance analysis, BioGaze integrates several AI models:
     cd BioGaze
   ```
 
-2. **Install Dependencies**
+2. **Install uv**
 
-  Install the required Python packages as specified in the requirements.txt file:
-
-  ```bash
-    pip install -r requirements.txt
-  ```
+  You can install uv from [this link](https://docs.astral.sh/uv/#installation)
 
 3. **Download Required Checkpoints**
 
@@ -151,7 +147,7 @@ The `quality_analysis.py` script performs a comprehensive analysis on all checks
 #### Usage
 
 ```bash
-python quality_analysis.py -i <input_path> [-o <output_path>]
+uv run quality_analysis.py -i <input_path> [-o <output_path>]
 ```
 
 - **Required Argument**:
@@ -178,7 +174,7 @@ The `face_tool.py` script enables processing of face images by running face dete
 #### Usage
 
 ```bash
-python face_tool.py -i <input_path> [-d] [-l] [-p] [-o <output_path>]
+uv run face_tool.py -i <input_path> [-d] [-l] [-p] [-o <output_path>]
 ```
 
 - **Required Arguments**:
@@ -199,7 +195,7 @@ The `specific_checks.py` script allows you to perform specific checks on an imag
 #### Usage
 
 ```bash
-python specific_checks.py -i <image_path> -c <checks_list>
+uv run specific_checks.py -i <image_path> -c <checks_list>
 ```
 
 - **Required Arguments**:
@@ -214,7 +210,7 @@ python specific_checks.py -i <image_path> -c <checks_list>
 You can view a list of available checks by running:
 
 ```bash
-python specific_checks.py --list-checks
+uv run specific_checks.py --list-checks
 ```
 
 This will display all checks with their corresponding IDs, such as `HEAD_WITHOUT_COVERING`, `EYES_OPEN`, etc.
